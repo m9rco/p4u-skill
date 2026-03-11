@@ -9,3 +9,6 @@ dist/
 # Go workspace
 go.work
 go.work.sum
+
+# OpenSpec changes (local proposals, not committed)
+openspec/changes/
