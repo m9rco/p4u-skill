@@ -58,10 +58,14 @@ jobs:
           GOOS=darwin  GOARCH=arm64  go build -ldflags "${LDFLAGS}" -o dist/p4u-darwin-arm64      .
           GOOS=windows GOARCH=amd64  go build -ldflags "${LDFLAGS}" -o dist/p4u-windows-amd64.exe .
 
+      - name: Install packaging tools
+        run: sudo apt-get install -y zip jq
+
       - name: Package skill
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
+          set -euo pipefail
           PUBLISHED_AT=$(date -u +%s%3N)
 
           # Stamp _meta.json in both skill directories
