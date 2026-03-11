@@ -235,22 +235,21 @@ jobs:
           # API payload — the server requires it but the current CLI (0.7.0) does
           # not send it yet.
           CLAWHUB_PUBLISH_JS="$(npm root -g)/clawhub/dist/cli/commands/publish.js"
-          node - "$CLAWHUB_PUBLISH_JS" <<'PATCH_EOF'
-const fs = require('fs');
-const path = process.argv[2];
-let src = fs.readFileSync(path, 'utf8');
-// Only patch once
-if (!src.includes('acceptLicenseTerms')) {
-  src = src.replace(
-    '...(forkOf ? { forkOf } : {}),',
-    '...(forkOf ? { forkOf } : {}),\n            acceptLicenseTerms: true,'
-  );
-  fs.writeFileSync(path, src);
-  console.log('Patched clawhub publish.js with acceptLicenseTerms:true');
-} else {
-  console.log('clawhub publish.js already patched');
-}
-PATCH_EOF
+          node -e "
+            const fs = require('fs');
+            const f = process.argv[1];
+            let s = fs.readFileSync(f, 'utf8');
+            if (!s.includes('acceptLicenseTerms')) {
+              s = s.replace(
+                '...(forkOf ? { forkOf } : {}),',
+                '...(forkOf ? { forkOf } : {}), acceptLicenseTerms: true,'
+              );
+              fs.writeFileSync(f, s);
+              console.log('Patched: acceptLicenseTerms injected');
+            } else {
+              console.log('Already patched');
+            }
+          " "$CLAWHUB_PUBLISH_JS"
 
           clawhub login --token "${CLAWHUB_TOKEN}" --no-browser --label "ci"
 
