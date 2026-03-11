@@ -57,8 +57,29 @@ Invoke-WebRequest -Uri "https://github.com/m9rco/p4u-skill/releases/latest/downl
 ## Prerequisites
 
 - `p4u` installed (auto-install above handles this)
-- Perforce CLI (`p4`) installed and configured
+- Perforce CLI (`p4`) installed and configured — see **Install p4 CLI** below
 - Logged in: `p4 login`
+
+### Install p4 CLI
+
+**macOS** (Homebrew):
+```bash
+brew install p4
+```
+
+**Linux** (direct download from Perforce):
+```bash
+curl -fsSL "https://cdist2.perforce.com/perforce/r24.2/bin.linux26x86_64/p4" \
+  -o /tmp/p4 && chmod +x /tmp/p4 && sudo mv /tmp/p4 /usr/local/bin/p4
+```
+
+**Windows** (direct download):
+```powershell
+Invoke-WebRequest -Uri "https://cdist2.perforce.com/perforce/r24.2/bin.ntx64/p4.exe" `
+  -OutFile "$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\p4.exe"
+```
+
+Or use the official package manager instructions at: https://www.perforce.com/downloads/helix-command-line-client-p4
 
 ## Rules
 
