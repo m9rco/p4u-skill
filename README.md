@@ -133,5 +133,6 @@ make build && ./p4u --help
 ## Skill Integration
 
 This tool ships with a CodeBuddy Code skill definition at
-`.codebuddy/skills/p4u.md`. Install it to let AI assistants use `p4u`
-to automate your Perforce workflows.
+`.codebuddy/skills/p4u/SKILL.md`. Copy the `.codebuddy/` directory into
+your project root to let AI assistants use `p4u` to automate your
+Perforce workflows.
