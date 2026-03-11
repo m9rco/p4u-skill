@@ -132,7 +132,41 @@ make build && ./p4u --help
 
 ## Skill Integration
 
-This tool ships with a CodeBuddy Code skill definition at
-`.codebuddy/skills/p4u/SKILL.md`. Copy the `.codebuddy/` directory into
-your project root to let AI assistants use `p4u` to automate your
-Perforce workflows.
+This repo ships a skill definition compatible with both
+[Claude Code](https://claude.ai/code) and [CodeBuddy Code](https://cnb.cool/codebuddy/codebuddy-code).
+
+| Client | Skill path |
+|--------|-----------|
+| Claude Code (Anthropic) | `.claude/skills/p4u/SKILL.md` |
+| CodeBuddy Code | `.codebuddy/skills/p4u/SKILL.md` |
+
+Both files are identical in content.
+
+### Project-level install
+
+Copy the relevant directory into your project root so the AI client picks
+it up automatically when you work in that project:
+
+```bash
+# Claude Code
+cp -r .claude  /path/to/your/project/
+
+# CodeBuddy Code
+cp -r .codebuddy  /path/to/your/project/
+```
+
+### User-level install (available in all projects)
+
+```bash
+# Claude Code
+mkdir -p ~/.claude/skills
+cp -r .claude/skills/p4u  ~/.claude/skills/
+
+# CodeBuddy Code
+mkdir -p ~/.codebuddy/skills
+cp -r .codebuddy/skills/p4u  ~/.codebuddy/skills/
+```
+
+Once installed, the skill auto-detects whether `p4u` is on your `$PATH`
+and provides a one-liner to download the correct binary from GitHub Releases
+if it is missing.
