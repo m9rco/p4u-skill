@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/m9rco/p4u-skill/internal/p4"
 	"github.com/m9rco/p4u-skill/internal/ui"
@@ -139,7 +140,5 @@ func runDeleteClient(cmd *cobra.Command, args []string) error {
 }
 
 func containsSubstring(s, substr string) bool {
-	return len(substr) > 0 && len(s) >= len(substr) &&
-		(s == substr || (len(s) > len(substr) && (s[:len(substr)] == substr ||
-			s[len(s)-len(substr):] == substr)))
+	return len(substr) > 0 && strings.Contains(s, substr)
 }

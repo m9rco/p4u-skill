@@ -3,7 +3,10 @@ package p4
 import (
 	"bytes"
 	"fmt"
+	"io/fs"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -70,16 +73,14 @@ func (c *Client) LoginStatus() error {
 }
 
 // ShelveDelete deletes the shelve of a changelist.
+// If client is non-empty it is passed via the top-level -c flag so the
+// operation is authorised under that client's context.
 func (c *Client) ShelveDelete(cl, client string) error {
-	args := []string{"shelve", "-d", "-c", cl}
 	if client != "" {
-		args = append([]string{"-c", client}, args...)
-		// p4 -c client shelve -d -c CL
-		args = append([]string{}, "shelve", "-d", "-c", cl)
-		cmd := exec.Command("p4", append([]string{"-c", client}, args...)...)
-		return cmd.Run()
+		_, err := c.exec.Run("-c", client, "shelve", "-d", "-c", cl)
+		return err
 	}
-	_, err := c.exec.Run(args...)
+	_, err := c.exec.Run("shelve", "-d", "-c", cl)
 	return err
 }
 
@@ -96,18 +97,17 @@ func (c *Client) Unshelve(src, dst string) error {
 }
 
 // Revert reverts a list of depot files.
+// If client is non-empty it is passed via the top-level -c flag.
 func (c *Client) Revert(client string, files []string) error {
 	if len(files) == 0 {
 		return nil
 	}
-	args := []string{"revert"}
+	var args []string
 	if client != "" {
-		args = append([]string{"-c", client}, args...)
-		// full: p4 -c client revert files...
-		cmd := exec.Command("p4", append(append([]string{"-c", client}, "revert"), files...)...)
-		return cmd.Run()
+		args = append([]string{"-c", client, "revert"}, files...)
+	} else {
+		args = append([]string{"revert"}, files...)
 	}
-	args = append(args, files...)
 	_, err := c.exec.Run(args...)
 	return err
 }
@@ -133,10 +133,11 @@ func (c *Client) RevertAll() error {
 }
 
 // DeleteChange deletes a changelist.
+// If client is non-empty it is passed via the top-level -c flag.
 func (c *Client) DeleteChange(cl, client string) error {
 	if client != "" {
-		cmd := exec.Command("p4", "-c", client, "change", "-d", cl)
-		return cmd.Run()
+		_, err := c.exec.Run("-c", client, "change", "-d", cl)
+		return err
 	}
 	_, err := c.exec.Run("change", "-d", cl)
 	return err
@@ -164,41 +165,60 @@ func (c *Client) ResolveAutoMerge() error {
 	return err
 }
 
-// Resolve runs interactive `p4 resolve` by delegating to the system.
+// Resolve runs `p4 resolve` attached to the current process's stdio so the
+// user can interact with merge prompts. Returns an error if the command exits
+// with a non-zero status.
 func (c *Client) Resolve() error {
 	cmd := exec.Command("p4", "resolve")
-	cmd.Stdin = nil
-	cmd.Stdout = nil
-	cmd.Stderr = nil
-	return cmd.Run()
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		msg := strings.TrimSpace(stderr.String())
+		if msg == "" {
+			msg = err.Error()
+		}
+		return fmt.Errorf("p4 resolve: %s", msg)
+	}
+	return nil
 }
 
 // FindUntracked returns files in dirs that p4 does not know about.
+// Uses Go's filepath.WalkDir instead of the Unix `find` command so it
+// works on Windows.
 func (c *Client) FindUntracked(dirs []string, maxDepth int) ([]string, error) {
 	if len(dirs) == 0 {
 		dirs = []string{"."}
 	}
-	// Build find command args.
-	findArgs := dirs
-	if maxDepth > 0 {
-		findArgs = append(findArgs, "-maxdepth", fmt.Sprintf("%d", maxDepth))
-	}
-	findArgs = append(findArgs, "-type", "f")
-
-	// Run find.
-	findCmd := exec.Command("find", findArgs...)
-	findOut, _ := findCmd.Output()
-	allFiles := strings.Split(strings.TrimSpace(string(findOut)), "\n")
 
 	var untracked []string
-	for _, f := range allFiles {
-		f = strings.TrimSpace(f)
-		if f == "" {
-			continue
-		}
-		out, _ := c.exec.Run("fstat", f)
-		if strings.Contains(out, "no such file") || out == "" {
-			untracked = append(untracked, f)
+	for _, root := range dirs {
+		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return nil // skip unreadable entries
+			}
+			if d.IsDir() {
+				// Enforce maxDepth when set.
+				if maxDepth > 0 {
+					rel, relErr := filepath.Rel(root, path)
+					if relErr == nil {
+						depth := len(strings.Split(filepath.ToSlash(rel), "/"))
+						if depth > maxDepth {
+							return filepath.SkipDir
+						}
+					}
+				}
+				return nil
+			}
+			out, _ := c.exec.Run("fstat", path)
+			if strings.Contains(out, "no such file") || strings.TrimSpace(out) == "" {
+				untracked = append(untracked, path)
+			}
+			return nil
+		})
+		if err != nil {
+			return nil, fmt.Errorf("walk %s: %w", root, err)
 		}
 	}
 	return untracked, nil

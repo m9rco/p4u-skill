@@ -38,23 +38,25 @@ jobs:
         id: version
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            VERSION="${{ github.ref_name }}"
+            BUILD_VERSION="${{ github.ref_name }}"
+            TAG_NAME="${{ github.ref_name }}"
             IS_TAG=true
           else
-            VERSION="latest"
+            BUILD_VERSION="sha-$(git rev-parse --short HEAD)"
+            TAG_NAME="nightly"
             IS_TAG=false
           fi
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "tag=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "build_version=${BUILD_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG_NAME}" >> "$GITHUB_OUTPUT"
           echo "is_tag=${IS_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Build all platforms
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          BUILD_VERSION: ${{ steps.version.outputs.build_version }}
         run: |
           set -euo pipefail
           mkdir -p dist
-          LDFLAGS="-X main.version=${VERSION} -s -w"
+          LDFLAGS="-X main.version=${BUILD_VERSION} -s -w"
 
           GOOS=linux   GOARCH=amd64  go build -ldflags "${LDFLAGS}" -o dist/p4u-linux-amd64       .
           GOOS=linux   GOARCH=arm64  go build -ldflags "${LDFLAGS}" -o dist/p4u-linux-arm64        .
@@ -67,14 +69,14 @@ jobs:
 
       - name: Package skill
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          BUILD_VERSION: ${{ steps.version.outputs.build_version }}
         run: |
           set -euo pipefail
           PUBLISHED_AT=$(date -u +%s%3N)
 
           for dir in .claude/skills/p4u .codebuddy/skills/p4u; do
             jq \
-              --arg v  "${VERSION}" \
+              --arg v  "${BUILD_VERSION}" \
               --argjson ts "${PUBLISHED_AT}" \
               --arg url "https://github.com/${{ github.repository }}/commit/${{ github.sha }}" \
               '.latest = {version: $v, publishedAt: $ts, commit: $url}' \
@@ -154,10 +156,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          name: "Release ${{ steps.version.outputs.version }}"
+          name: "Release ${{ steps.version.outputs.tag }}"
           make_latest: true
           body: |
-            ## p4u ${{ steps.version.outputs.version }}
+            ## p4u ${{ steps.version.outputs.tag }}
 
             **Commit:** [`${{ github.sha }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
 
@@ -175,13 +177,13 @@ jobs:
             ```bash
             OS=$(uname -s | tr '[:upper:]' '[:lower:]') && ARCH=$(uname -m)
             [[ "$ARCH" == "x86_64" ]] && ARCH=amd64 || ARCH=arm64
-            curl -fsSL "https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.version }}/p4u-${OS}-${ARCH}" \
+            curl -fsSL "https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.tag }}/p4u-${OS}-${ARCH}" \
               -o /tmp/p4u && chmod +x /tmp/p4u && sudo mv /tmp/p4u /usr/local/bin/p4u
             ```
 
             ### Install binary — Windows (PowerShell)
             ```powershell
-            Invoke-WebRequest -Uri "https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.version }}/p4u-windows-amd64.exe" `
+            Invoke-WebRequest -Uri "https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.tag }}/p4u-windows-amd64.exe" `
               -OutFile "$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\p4u.exe"
             ```
 
@@ -189,12 +191,12 @@ jobs:
             ```bash
             # user-level
             mkdir -p ~/.codebuddy/skills
-            curl -fsSL https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.version }}/skill-p4u.zip \
+            curl -fsSL https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.tag }}/skill-p4u.zip \
               -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d ~/.codebuddy/skills/
 
             # project-level
             mkdir -p .codebuddy/skills
-            curl -fsSL https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.version }}/skill-p4u.zip \
+            curl -fsSL https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.tag }}/skill-p4u.zip \
               -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d .codebuddy/skills/
             ```
 

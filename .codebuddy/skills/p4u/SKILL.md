@@ -43,14 +43,14 @@ uname -s 2>/dev/null   # → Darwin | Linux  (absent on Windows)
 ```bash
 OS=$(uname -s | tr '[:upper:]' '[:lower:]') && ARCH=$(uname -m)
 [[ "$ARCH" == "x86_64" ]] && ARCH=amd64 || ARCH=arm64
-curl -fsSL "https://github.com/m9rco/p4u-skill/releases/latest/download/p4u-${OS}-${ARCH}" \
+curl -fsSL "https://github.com/m9rco/p4u-skill/releases/download/nightly/p4u-${OS}-${ARCH}" \
   -o /tmp/p4u && chmod +x /tmp/p4u && sudo mv /tmp/p4u /usr/local/bin/p4u
 ```
 
 **Windows** (PowerShell — use when `uname` is unavailable):
 
 ```powershell
-Invoke-WebRequest -Uri "https://github.com/m9rco/p4u-skill/releases/latest/download/p4u-windows-amd64.exe" `
+Invoke-WebRequest -Uri "https://github.com/m9rco/p4u-skill/releases/download/nightly/p4u-windows-amd64.exe" `
   -OutFile "$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\p4u.exe"
 ```
 

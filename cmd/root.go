@@ -32,6 +32,11 @@ It wraps common p4 workflows with better UX, color output, and automation suppor
 	},
 }
 
+// SetVersion sets the version string reported by --version.
+func SetVersion(v string) {
+	rootCmd.Version = v
+}
+
 // Execute runs the root command.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
