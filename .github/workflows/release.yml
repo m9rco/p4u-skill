@@ -72,7 +72,6 @@ jobs:
           set -euo pipefail
           PUBLISHED_AT=$(date -u +%s%3N)
 
-          # Stamp _meta.json in both skill directories
           for dir in .claude/skills/p4u .codebuddy/skills/p4u; do
             jq \
               --arg v  "${VERSION}" \
@@ -83,9 +82,8 @@ jobs:
             mv "${dir}/_meta.json.tmp" "${dir}/_meta.json"
           done
 
-          # Pack both skill directories into a single zip
           zip -r dist/skill-p4u.zip .claude/skills/p4u/ .codebuddy/skills/p4u/
-          echo "Packed skill-p4u.zip:"
+          echo "Contents of skill-p4u.zip:"
           unzip -l dist/skill-p4u.zip
 
       - name: Generate checksums
@@ -98,51 +96,51 @@ jobs:
         if: steps.version.outputs.is_tag == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+          SERVER_URL: ${{ github.server_url }}
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
 
-          BODY=$(cat <<'BODY'
+          cat > /tmp/release-notes.md << EOF
           ## p4u latest
 
-          This release is automatically updated on every push to `main`.
-          For a stable release, use a tagged version.
+          Automatically updated on every push to \`main\`. Use a tagged version for stable releases.
 
-          **Commit:** [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+          **Commit:** [\`${SHA}\`](${SERVER_URL}/${REPO}/commit/${SHA})
 
-          ### Install binary (macOS/Linux)
-          ```bash
-          OS=$(uname -s | tr '[:upper:]' '[:lower:]') && ARCH=$(uname -m)
-          [[ "$ARCH" == "x86_64" ]] && ARCH=amd64 || ARCH=arm64
-          curl -fsSL "https://github.com/m9rco/p4u-skill/releases/latest/download/p4u-${OS}-${ARCH}" \
+          ### Install binary — macOS / Linux
+          \`\`\`bash
+          OS=\$(uname -s | tr '[:upper:]' '[:lower:]') && ARCH=\$(uname -m)
+          [[ "\$ARCH" == "x86_64" ]] && ARCH=amd64 || ARCH=arm64
+          curl -fsSL "https://github.com/m9rco/p4u-skill/releases/latest/download/p4u-\${OS}-\${ARCH}" \\
             -o /tmp/p4u && chmod +x /tmp/p4u && sudo mv /tmp/p4u /usr/local/bin/p4u
-          ```
+          \`\`\`
 
-          ### Install binary (Windows)
-          ```powershell
-          Invoke-WebRequest -Uri "https://github.com/m9rco/p4u-skill/releases/latest/download/p4u-windows-amd64.exe" `
-            -OutFile "$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\p4u.exe"
-          ```
+          ### Install binary — Windows (PowerShell)
+          \`\`\`powershell
+          Invoke-WebRequest -Uri "https://github.com/m9rco/p4u-skill/releases/latest/download/p4u-windows-amd64.exe" \`
+            -OutFile "\$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\p4u.exe"
+          \`\`\`
 
           ### Install skill (Claude Code / CodeBuddy Code)
-          ```bash
-          # project-level (unzips to .claude/skills/p4u/ and .codebuddy/skills/p4u/)
-          curl -fsSL https://github.com/m9rco/p4u-skill/releases/latest/download/skill-p4u.zip \
+          \`\`\`bash
+          # project-level — unzips to .claude/skills/p4u/ and .codebuddy/skills/p4u/
+          curl -fsSL https://github.com/m9rco/p4u-skill/releases/latest/download/skill-p4u.zip \\
             -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d .
 
           # user-level
-          curl -fsSL https://github.com/m9rco/p4u-skill/releases/latest/download/skill-p4u.zip \
+          curl -fsSL https://github.com/m9rco/p4u-skill/releases/latest/download/skill-p4u.zip \\
             -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d ~
-          ```
-          BODY
-          )
+          \`\`\`
+          EOF
 
-          # Delete existing 'latest' release and tag so we can recreate cleanly
           gh release delete latest --yes --cleanup-tag 2>/dev/null || true
           sleep 2
 
           gh release create latest \
             --title "Latest" \
-            --notes "${BODY}" \
+            --notes-file /tmp/release-notes.md \
             --prerelease \
             dist/p4u-linux-amd64 \
             dist/p4u-linux-arm64 \
@@ -156,14 +154,17 @@ jobs:
         if: steps.version.outputs.is_tag == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          SHA: ${{ github.sha }}
+          SERVER_URL: ${{ github.server_url }}
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          VERSION="${{ steps.version.outputs.version }}"
 
-          BODY=$(cat <<BODY
+          cat > /tmp/release-notes.md << EOF
           ## p4u ${VERSION}
 
-          **Commit:** [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+          **Commit:** [\`${SHA}\`](${SERVER_URL}/${REPO}/commit/${SHA})
 
           ### Download
 
@@ -175,7 +176,7 @@ jobs:
           | macOS    | Apple Silicon | \`p4u-darwin-arm64\` |
           | Windows  | x86_64      | \`p4u-windows-amd64.exe\` |
 
-          ### Install binary (macOS/Linux)
+          ### Install binary — macOS / Linux
           \`\`\`bash
           OS=\$(uname -s | tr '[:upper:]' '[:lower:]') && ARCH=\$(uname -m)
           [[ "\$ARCH" == "x86_64" ]] && ARCH=amd64 || ARCH=arm64
@@ -183,7 +184,7 @@ jobs:
             -o /tmp/p4u && chmod +x /tmp/p4u && sudo mv /tmp/p4u /usr/local/bin/p4u
           \`\`\`
 
-          ### Install binary (Windows)
+          ### Install binary — Windows (PowerShell)
           \`\`\`powershell
           Invoke-WebRequest -Uri "https://github.com/m9rco/p4u-skill/releases/download/${VERSION}/p4u-windows-amd64.exe" \`
             -OutFile "\$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\p4u.exe"
@@ -204,12 +205,11 @@ jobs:
           \`\`\`bash
           sha256sum -c checksums.txt
           \`\`\`
-          BODY
-          )
+          EOF
 
           gh release create "${VERSION}" \
             --title "Release ${VERSION}" \
-            --notes "${BODY}" \
+            --notes-file /tmp/release-notes.md \
             --latest \
             dist/p4u-linux-amd64 \
             dist/p4u-linux-arm64 \
