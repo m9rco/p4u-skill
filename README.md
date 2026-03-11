@@ -146,31 +146,21 @@ This repo ships a skill definition compatible with both
 
 Both files are identical in content.
 
-### Project-level install
-
-Copy the relevant directory into your project root so the AI client picks
-it up automatically when you work in that project:
+### Install from release (recommended)
 
 ```bash
-# Claude Code
-cp -r .claude  /path/to/your/project/
+# project-level (.claude/skills/p4u/)
+mkdir -p .claude/skills
+curl -fsSL https://github.com/m9rco/p4u-skill/releases/latest/download/skill-p4u.zip \
+  -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d .claude/skills/
 
-# CodeBuddy Code
-cp -r .codebuddy  /path/to/your/project/
-```
-
-### User-level install (available in all projects)
-
-```bash
-# Claude Code
+# user-level (~/.claude/skills/p4u/)
 mkdir -p ~/.claude/skills
-cp -r .claude/skills/p4u  ~/.claude/skills/
-
-# CodeBuddy Code
-mkdir -p ~/.codebuddy/skills
-cp -r .codebuddy/skills/p4u  ~/.codebuddy/skills/
+curl -fsSL https://github.com/m9rco/p4u-skill/releases/latest/download/skill-p4u.zip \
+  -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d ~/.claude/skills/
 ```
+
+> For CodeBuddy Code, replace `.claude/` with `.codebuddy/`.
 
 Once installed, the skill auto-detects whether `p4u` is on your `$PATH`
-and provides a one-liner to download the correct binary from GitHub Releases
-if it is missing.
+and provides a one-liner to download the correct binary if it is missing.
