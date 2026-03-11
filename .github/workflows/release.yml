@@ -231,6 +231,27 @@ jobs:
 
           npm i -g clawhub --silent
 
+          # Patch clawhub publish.js to inject acceptLicenseTerms:true into the
+          # API payload — the server requires it but the current CLI (0.7.0) does
+          # not send it yet.
+          CLAWHUB_PUBLISH_JS="$(npm root -g)/clawhub/dist/cli/commands/publish.js"
+          node - "$CLAWHUB_PUBLISH_JS" <<'PATCH_EOF'
+const fs = require('fs');
+const path = process.argv[2];
+let src = fs.readFileSync(path, 'utf8');
+// Only patch once
+if (!src.includes('acceptLicenseTerms')) {
+  src = src.replace(
+    '...(forkOf ? { forkOf } : {}),',
+    '...(forkOf ? { forkOf } : {}),\n            acceptLicenseTerms: true,'
+  );
+  fs.writeFileSync(path, src);
+  console.log('Patched clawhub publish.js with acceptLicenseTerms:true');
+} else {
+  console.log('clawhub publish.js already patched');
+}
+PATCH_EOF
+
           clawhub login --token "${CLAWHUB_TOKEN}" --no-browser --label "ci"
 
           if [[ "${IS_TAG}" == "true" ]]; then
@@ -246,10 +267,9 @@ jobs:
           fi
 
           clawhub publish "${CLAWHUB_SKILL_DIR}" \
-            --slug                p4u \
-            --name                "p4u" \
-            --version             "${CLAWHUB_VERSION}" \
-            --changelog           "${CHANGELOG}" \
-            --tags                "${CLAWHUB_TAGS}" \
-            --accept-license-terms \
+            --slug      p4u \
+            --name      "p4u" \
+            --version   "${CLAWHUB_VERSION}" \
+            --changelog "${CHANGELOG}" \
+            --tags      "${CLAWHUB_TAGS}" \
             --no-input
