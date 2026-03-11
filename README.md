@@ -43,15 +43,45 @@ make build-all
 
 ### Pre-built binaries (latest release)
 
+**macOS / Linux** — auto-detect OS and arch:
+
 ```bash
-# macOS / Linux — auto-detect OS and arch
 OS=$(uname -s | tr '[:upper:]' '[:lower:]') && ARCH=$(uname -m)
 [[ "$ARCH" == "x86_64" ]] && ARCH=amd64 || ARCH=arm64
 curl -fsSL "https://github.com/m9rco/p4u-skill/releases/latest/download/p4u-${OS}-${ARCH}" \
   -o /tmp/p4u && chmod +x /tmp/p4u && sudo mv /tmp/p4u /usr/local/bin/p4u
 ```
 
-Windows: download `p4u-windows-amd64.exe` from the [releases page](https://github.com/m9rco/p4u-skill/releases/latest).
+**Windows** (PowerShell):
+
+```powershell
+Invoke-WebRequest -Uri "https://github.com/m9rco/p4u-skill/releases/latest/download/p4u-windows-amd64.exe" `
+  -OutFile "$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\p4u.exe"
+```
+
+### Prerequisites — Perforce CLI (`p4`)
+
+**macOS** (Homebrew):
+
+```bash
+brew install p4
+```
+
+**Linux**:
+
+```bash
+curl -fsSL "https://cdist2.perforce.com/perforce/r24.2/bin.linux26x86_64/p4" \
+  -o /tmp/p4 && chmod +x /tmp/p4 && sudo mv /tmp/p4 /usr/local/bin/p4
+```
+
+**Windows** (PowerShell):
+
+```powershell
+Invoke-WebRequest -Uri "https://cdist2.perforce.com/perforce/r24.2/bin.ntx64/p4.exe" `
+  -OutFile "$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\p4.exe"
+```
+
+Or download from the official page: https://www.perforce.com/downloads/helix-command-line-client-p4
 
 ## Usage
 
@@ -148,19 +178,17 @@ Both files are identical in content.
 
 ### Install from release (recommended)
 
-```bash
-# project-level (.claude/skills/p4u/)
-mkdir -p .claude/skills
-curl -fsSL https://github.com/m9rco/p4u-skill/releases/latest/download/skill-p4u.zip \
-  -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d .claude/skills/
+The zip contains both `.claude/skills/p4u/` and `.codebuddy/skills/p4u/` — one command covers both clients:
 
-# user-level (~/.claude/skills/p4u/)
-mkdir -p ~/.claude/skills
+```bash
+# project-level
 curl -fsSL https://github.com/m9rco/p4u-skill/releases/latest/download/skill-p4u.zip \
-  -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d ~/.claude/skills/
+  -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d .
+
+# user-level
+curl -fsSL https://github.com/m9rco/p4u-skill/releases/latest/download/skill-p4u.zip \
+  -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d ~
 ```
 
-> For CodeBuddy Code, replace `.claude/` with `.codebuddy/`.
-
-Once installed, the skill auto-detects whether `p4u` is on your `$PATH`
-and provides a one-liner to download the correct binary if it is missing.
+Once installed, the skill auto-detects whether `p4u` is on `$PATH` and
+installs the correct binary silently if it is missing — no manual setup needed.
