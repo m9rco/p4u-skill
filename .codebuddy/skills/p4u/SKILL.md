@@ -34,11 +34,8 @@ set -e
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
 case "$ARCH" in x86_64) ARCH=amd64 ;; aarch64|arm64) ARCH=arm64 ;; esac
-REPO="m9rco/p4u-skill"
-TAG=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
-      | grep '"tag_name"' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
-URL="https://github.com/${REPO}/releases/download/${TAG}/p4u-${OS}-${ARCH}"
-echo "Downloading p4u ${TAG} for ${OS}/${ARCH}..."
+URL="https://github.com/m9rco/p4u-skill/releases/latest/download/p4u-${OS}-${ARCH}"
+echo "Downloading p4u (latest) for ${OS}/${ARCH}..."
 curl -fsSL "$URL" -o /tmp/p4u
 chmod +x /tmp/p4u
 sudo mv /tmp/p4u /usr/local/bin/p4u

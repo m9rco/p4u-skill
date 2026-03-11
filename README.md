@@ -41,13 +41,17 @@ make install
 make build-all
 ```
 
-### Pre-built binaries
+### Pre-built binaries (latest release)
 
-Download from the releases page:
-- `p4u-darwin-arm64` (macOS Apple Silicon)
-- `p4u-darwin-amd64` (macOS Intel)
-- `p4u-linux-amd64` (Linux)
-- `p4u-windows-amd64.exe` (Windows)
+```bash
+# macOS / Linux — auto-detect OS and arch
+OS=$(uname -s | tr '[:upper:]' '[:lower:]') && ARCH=$(uname -m)
+[[ "$ARCH" == "x86_64" ]] && ARCH=amd64 || ARCH=arm64
+curl -fsSL "https://github.com/m9rco/p4u-skill/releases/latest/download/p4u-${OS}-${ARCH}" \
+  -o /tmp/p4u && chmod +x /tmp/p4u && sudo mv /tmp/p4u /usr/local/bin/p4u
+```
+
+Windows: download `p4u-windows-amd64.exe` from the [releases page](https://github.com/m9rco/p4u-skill/releases/latest).
 
 ## Usage
 

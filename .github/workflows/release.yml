@@ -2,9 +2,8 @@ name: Release
 
 on:
   push:
-    branches:
-      - main
-      - master
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
@@ -32,10 +31,7 @@ jobs:
       - name: Compute version
         id: version
         run: |
-          # Use short SHA as the version tag, prefixed with the date
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          DATE=$(date -u +"%Y%m%d")
-          VERSION="v${DATE}-${SHORT_SHA}"
+          VERSION="${{ github.ref_name }}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag=${VERSION}" >> "$GITHUB_OUTPUT"
 
@@ -105,23 +101,24 @@ jobs:
             ### Install (macOS/Linux)
             ```bash
             # macOS Apple Silicon
-            curl -Lo p4u https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.tag }}/p4u-darwin-arm64
-            chmod +x p4u && sudo mv p4u /usr/local/bin/
+            curl -fsSL https://github.com/m9rco/p4u-skill/releases/latest/download/p4u-darwin-arm64 \
+              -o /tmp/p4u && chmod +x /tmp/p4u && sudo mv /tmp/p4u /usr/local/bin/
 
             # Linux x86_64
-            curl -Lo p4u https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.tag }}/p4u-linux-amd64
-            chmod +x p4u && sudo mv p4u /usr/local/bin/
+            curl -fsSL https://github.com/m9rco/p4u-skill/releases/latest/download/p4u-linux-amd64 \
+              -o /tmp/p4u && chmod +x /tmp/p4u && sudo mv /tmp/p4u /usr/local/bin/
             ```
 
             ### Install skill (Claude Code / CodeBuddy Code)
             ```bash
-            # project-level (current directory)
-            curl -fsSL https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.tag }}/skill-p4u.tar.gz \
+            # project-level
+            mkdir -p .claude/skills
+            curl -fsSL https://github.com/m9rco/p4u-skill/releases/latest/download/skill-p4u.tar.gz \
               | tar -xz -C .claude/skills/
 
             # user-level (all projects)
             mkdir -p ~/.claude/skills
-            curl -fsSL https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.tag }}/skill-p4u.tar.gz \
+            curl -fsSL https://github.com/m9rco/p4u-skill/releases/latest/download/skill-p4u.tar.gz \
               | tar -xz -C ~/.claude/skills/
             ```
 
