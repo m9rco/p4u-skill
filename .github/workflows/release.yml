@@ -52,6 +52,29 @@ jobs:
           GOOS=darwin  GOARCH=arm64  go build -ldflags "${LDFLAGS}" -o dist/p4u-darwin-arm64      .
           GOOS=windows GOARCH=amd64  go build -ldflags "${LDFLAGS}" -o dist/p4u-windows-amd64.exe .
 
+      - name: Package skill
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          PUBLISHED_AT=$(date -u +%s%3N)
+
+          # Update _meta.json in both skill directories
+          for dir in .claude/skills/p4u .codebuddy/skills/p4u; do
+            jq \
+              --arg v  "${VERSION}" \
+              --argjson ts "${PUBLISHED_AT}" \
+              --arg url "https://github.com/${{ github.repository }}/commit/${{ github.sha }}" \
+              '.latest = {version: $v, publishedAt: $ts, commit: $url}' \
+              "${dir}/_meta.json" > "${dir}/_meta.json.tmp"
+            mv "${dir}/_meta.json.tmp" "${dir}/_meta.json"
+          done
+
+          # Pack the canonical (.claude) skill directory
+          mkdir -p dist
+          tar -czf dist/skill-p4u.tar.gz -C .claude/skills p4u
+          echo "Packed skill-p4u.tar.gz:"
+          tar -tzvf dist/skill-p4u.tar.gz
+
       - name: Generate checksums
         run: |
           cd dist
@@ -90,6 +113,18 @@ jobs:
             chmod +x p4u && sudo mv p4u /usr/local/bin/
             ```
 
+            ### Install skill (Claude Code / CodeBuddy Code)
+            ```bash
+            # project-level (current directory)
+            curl -fsSL https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.tag }}/skill-p4u.tar.gz \
+              | tar -xz -C .claude/skills/
+
+            # user-level (all projects)
+            mkdir -p ~/.claude/skills
+            curl -fsSL https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.tag }}/skill-p4u.tar.gz \
+              | tar -xz -C ~/.claude/skills/
+            ```
+
             ### Verify checksums
             ```bash
             sha256sum -c checksums.txt
@@ -100,6 +135,7 @@ jobs:
             dist/p4u-darwin-amd64
             dist/p4u-darwin-arm64
             dist/p4u-windows-amd64.exe
+            dist/skill-p4u.tar.gz
             dist/checksums.txt
           make_latest: true
           fail_on_unmatched_files: true
