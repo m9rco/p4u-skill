@@ -1,6 +1,6 @@
 # Binaries
-p4u
-p4u.exe
+/p4u
+/p4u.exe
 dist/
 
 # Build artifacts
