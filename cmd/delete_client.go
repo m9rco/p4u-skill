@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/NZServer/NZMTools/p4u-skill/internal/p4"
-	"github.com/NZServer/NZMTools/p4u-skill/internal/ui"
+	"github.com/m9rco/p4u-skill/internal/p4"
+	"github.com/m9rco/p4u-skill/internal/ui"
 	"github.com/spf13/cobra"
 )
 

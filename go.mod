@@ -1,4 +1,4 @@
-module github.com/NZServer/NZMTools/p4u-skill
+module github.com/m9rco/p4u-skill
 
 go 1.23.0
 

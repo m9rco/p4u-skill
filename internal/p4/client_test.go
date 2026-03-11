@@ -3,7 +3,7 @@ package p4_test
 import (
 	"testing"
 
-	"github.com/NZServer/NZMTools/p4u-skill/internal/p4"
+	"github.com/m9rco/p4u-skill/internal/p4"
 )
 
 // MockExecutor implements p4.Executor for testing.

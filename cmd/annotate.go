@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/NZServer/NZMTools/p4u-skill/internal/output"
-	"github.com/NZServer/NZMTools/p4u-skill/internal/ui"
+	"github.com/m9rco/p4u-skill/internal/output"
+	"github.com/m9rco/p4u-skill/internal/ui"
 	"github.com/spf13/cobra"
 )
 
