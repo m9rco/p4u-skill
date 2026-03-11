@@ -176,19 +176,20 @@ This repo ships a skill definition compatible with both
 
 Both files are identical in content.
 
-### Install from release (recommended)
+### Install skill (Claude Code / CodeBuddy Code)
 
-The zip contains both `.claude/skills/p4u/` and `.codebuddy/skills/p4u/` — one command covers both clients:
+Install to user-level skills directory — works for all projects:
 
 ```bash
-# project-level
-curl -fsSL https://github.com/m9rco/p4u-skill/releases/latest/download/skill-p4u.zip \
-  -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d .
-
-# user-level
-curl -fsSL https://github.com/m9rco/p4u-skill/releases/latest/download/skill-p4u.zip \
-  -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d ~
+mkdir -p ~/.codebuddy/skills
+curl -fsSL https://github.com/m9rco/p4u-skill/releases/download/nightly/skill-p4u.zip \
+  -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d ~/.codebuddy/skills/
 ```
 
-Once installed, the skill auto-detects whether `p4u` is on `$PATH` and
-installs the correct binary silently if it is missing — no manual setup needed.
+Or project-level:
+
+```bash
+mkdir -p .codebuddy/skills
+curl -fsSL https://github.com/m9rco/p4u-skill/releases/download/nightly/skill-p4u.zip \
+  -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d .codebuddy/skills/
+```

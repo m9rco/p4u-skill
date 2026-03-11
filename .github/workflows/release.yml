@@ -82,7 +82,13 @@ jobs:
             mv "${dir}/_meta.json.tmp" "${dir}/_meta.json"
           done
 
-          zip -r dist/skill-p4u.zip .claude/skills/p4u/ .codebuddy/skills/p4u/
+          # Pack with path p4u/ at zip root — unzip -d ~/.codebuddy/skills/ works directly
+          mkdir -p /tmp/skill-stage/p4u
+          cp .codebuddy/skills/p4u/SKILL.md /tmp/skill-stage/p4u/
+          cp .codebuddy/skills/p4u/_meta.json /tmp/skill-stage/p4u/
+          cd /tmp/skill-stage
+          zip -r "$OLDPWD/dist/skill-p4u.zip" p4u/
+          cd "$OLDPWD"
           echo "Contents of skill-p4u.zip:"
           unzip -l dist/skill-p4u.zip
 
@@ -123,13 +129,15 @@ jobs:
 
             ### Install skill (Claude Code / CodeBuddy Code)
             ```bash
-            # project-level — unzips to .claude/skills/p4u/ and .codebuddy/skills/p4u/
-            curl -fsSL https://github.com/m9rco/p4u-skill/releases/download/nightly/skill-p4u.zip \
-              -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d .
-
             # user-level
+            mkdir -p ~/.codebuddy/skills
             curl -fsSL https://github.com/m9rco/p4u-skill/releases/download/nightly/skill-p4u.zip \
-              -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d ~
+              -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d ~/.codebuddy/skills/
+
+            # project-level
+            mkdir -p .codebuddy/skills
+            curl -fsSL https://github.com/m9rco/p4u-skill/releases/download/nightly/skill-p4u.zip \
+              -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d .codebuddy/skills/
             ```
           files: |
             dist/p4u-linux-amd64
@@ -179,13 +187,15 @@ jobs:
 
             ### Install skill (Claude Code / CodeBuddy Code)
             ```bash
-            # project-level
-            curl -fsSL https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.version }}/skill-p4u.zip \
-              -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d .
-
             # user-level
+            mkdir -p ~/.codebuddy/skills
             curl -fsSL https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.version }}/skill-p4u.zip \
-              -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d ~
+              -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d ~/.codebuddy/skills/
+
+            # project-level
+            mkdir -p .codebuddy/skills
+            curl -fsSL https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.version }}/skill-p4u.zip \
+              -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d .codebuddy/skills/
             ```
 
             ### Verify checksums
