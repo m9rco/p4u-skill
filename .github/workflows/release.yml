@@ -265,10 +265,16 @@ jobs:
             CLAWHUB_TAGS="nightly"
           fi
 
-          clawhub publish "${CLAWHUB_SKILL_DIR}" \
-            --slug      p4u \
-            --name      "p4u" \
-            --version   "${CLAWHUB_VERSION}" \
-            --changelog "${CHANGELOG}" \
-            --tags      "${CLAWHUB_TAGS}" \
-            --no-input
+          for attempt in 1 2 3; do
+            echo "ClawHub publish attempt ${attempt}/3"
+            clawhub publish "${CLAWHUB_SKILL_DIR}" \
+              --slug      p4u \
+              --name      "p4u" \
+              --version   "${CLAWHUB_VERSION}" \
+              --changelog "${CHANGELOG}" \
+              --tags      "${CLAWHUB_TAGS}" \
+              --no-input && break
+            [[ ${attempt} -eq 3 ]] && { echo "All attempts failed"; exit 1; }
+            echo "Retrying in 60s..."
+            sleep 60
+          done
