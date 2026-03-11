@@ -1,0 +1,11 @@
+# Binaries
+p4u
+p4u.exe
+dist/
+
+# Build artifacts
+*.test
+
+# Go workspace
+go.work
+go.work.sum

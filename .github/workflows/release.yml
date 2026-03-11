@@ -1,0 +1,105 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Run tests
+        run: go test ./...
+
+      - name: Compute version
+        id: version
+        run: |
+          # Use short SHA as the version tag, prefixed with the date
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          DATE=$(date -u +"%Y%m%d")
+          VERSION="v${DATE}-${SHORT_SHA}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build all platforms
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir -p dist
+          LDFLAGS="-ldflags=-X main.version=${VERSION} -s -w"
+
+          GOOS=linux   GOARCH=amd64  go build ${LDFLAGS} -o dist/p4u-linux-amd64       .
+          GOOS=linux   GOARCH=arm64  go build ${LDFLAGS} -o dist/p4u-linux-arm64        .
+          GOOS=darwin  GOARCH=amd64  go build ${LDFLAGS} -o dist/p4u-darwin-amd64      .
+          GOOS=darwin  GOARCH=arm64  go build ${LDFLAGS} -o dist/p4u-darwin-arm64      .
+          GOOS=windows GOARCH=amd64  go build ${LDFLAGS} -o dist/p4u-windows-amd64.exe .
+
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum * > checksums.txt
+          cat checksums.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "Release ${{ steps.version.outputs.version }}"
+          body: |
+            ## p4u ${{ steps.version.outputs.version }}
+
+            **Commit:** [`${{ github.sha }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+            **Branch:** `${{ github.ref_name }}`
+
+            ### Download
+
+            | Platform | Architecture | Binary |
+            |----------|-------------|--------|
+            | Linux    | x86_64      | `p4u-linux-amd64` |
+            | Linux    | arm64       | `p4u-linux-arm64` |
+            | macOS    | Intel       | `p4u-darwin-amd64` |
+            | macOS    | Apple Silicon | `p4u-darwin-arm64` |
+            | Windows  | x86_64      | `p4u-windows-amd64.exe` |
+
+            ### Install (macOS/Linux)
+            ```bash
+            # macOS Apple Silicon
+            curl -Lo p4u https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.tag }}/p4u-darwin-arm64
+            chmod +x p4u && sudo mv p4u /usr/local/bin/
+
+            # Linux x86_64
+            curl -Lo p4u https://github.com/m9rco/p4u-skill/releases/download/${{ steps.version.outputs.tag }}/p4u-linux-amd64
+            chmod +x p4u && sudo mv p4u /usr/local/bin/
+            ```
+
+            ### Verify checksums
+            ```bash
+            sha256sum -c checksums.txt
+            ```
+          files: |
+            dist/p4u-linux-amd64
+            dist/p4u-linux-arm64
+            dist/p4u-darwin-amd64
+            dist/p4u-darwin-arm64
+            dist/p4u-windows-amd64.exe
+            dist/checksums.txt
+          make_latest: true
+          fail_on_unmatched_files: true
