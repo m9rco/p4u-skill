@@ -246,9 +246,10 @@ jobs:
           fi
 
           clawhub publish "${CLAWHUB_SKILL_DIR}" \
-            --slug      p4u \
-            --name      "p4u" \
-            --version   "${CLAWHUB_VERSION}" \
-            --changelog "${CHANGELOG}" \
-            --tags      "${CLAWHUB_TAGS}" \
+            --slug                p4u \
+            --name                "p4u" \
+            --version             "${CLAWHUB_VERSION}" \
+            --changelog           "${CHANGELOG}" \
+            --tags                "${CLAWHUB_TAGS}" \
+            --accept-license-terms \
             --no-input
