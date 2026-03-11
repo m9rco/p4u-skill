@@ -3,6 +3,13 @@ name: p4u
 description: Cross-platform Perforce CLI enhancement tool. Use to query and manipulate Perforce changelists, shelves, clients, and file annotations. Supports Windows/macOS/Linux.
 allowed-tools:
   - Bash(p4u:*)
+  - Bash(curl:*)
+  - Bash(which:*)
+  - Bash(uname:*)
+  - Bash(chmod:*)
+  - Bash(mv:*)
+  - Bash(sudo mv:*)
+  - Bash(mkdir:*)
 ---
 
 # p4u Skill
@@ -10,24 +17,44 @@ allowed-tools:
 `p4u` is a cross-platform Perforce CLI enhancement tool built with Go.
 It wraps common `p4` workflows with better UX, color output, and automation support.
 
-## Prerequisites
+## Binary status
+!`which p4u 2>/dev/null && echo "p4u is available at: $(which p4u)" || echo "p4u is NOT installed"`
 
-- `p4u` binary must be installed and on `$PATH`
-- Perforce CLI (`p4`) must be installed and configured
-- User must be logged in (`p4 login`)
+## Install p4u (if not installed)
 
-## Installing p4u
+If the status above says "NOT installed", run the following to download the correct binary from GitHub Releases:
 
-Build from source:
 ```bash
-cd p4u-skill && make install
+set -e
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+ARCH=$(uname -m)
+case "$ARCH" in
+  x86_64)  ARCH="amd64" ;;
+  aarch64|arm64) ARCH="arm64" ;;
+esac
+REPO="m9rco/p4u-skill"
+TAG=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name"' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
+BINARY="p4u-${OS}-${ARCH}"
+URL="https://github.com/${REPO}/releases/download/${TAG}/${BINARY}"
+echo "Downloading ${BINARY} from ${TAG}..."
+curl -fsSL "$URL" -o /tmp/p4u
+chmod +x /tmp/p4u
+sudo mv /tmp/p4u /usr/local/bin/p4u
+echo "Installed: $(p4u --version 2>/dev/null || p4u --help 2>&1 | head -1)"
 ```
 
-Or download a pre-built binary from the releases page and place it on `$PATH`.
+> On Windows, download `p4u-windows-amd64.exe` manually from
+> https://github.com/m9rco/p4u-skill/releases/latest and place it on `%PATH%`.
+
+## Prerequisites
+
+- `p4u` binary installed (see above)
+- Perforce CLI (`p4`) installed and configured
+- Logged in via `p4 login`
 
 ## Commands
 
-Always pass `--non-interactive` when using from automation (avoids prompts).
+Always pass `--non-interactive` when running from automation (avoids hanging on prompts).
 Use `--json` for structured output.
 
 ### Show client status
@@ -137,5 +164,6 @@ p4u untracked --json --non-interactive
 1. **Always** pass `--non-interactive` to avoid hanging on prompts.
 2. Use `--json` when you need to parse the output programmatically.
 3. Changelist numbers are strings (e.g., `"12345"`), not integers.
-4. `p4u switch` without arguments just shelves everything - useful for "save my work" scenarios.
+4. `p4u switch` without arguments just shelves everything — useful for "save my work" scenarios.
 5. The tool reads `p4 info` to detect the current client/user automatically.
+6. If `p4u` is not found, follow the "Install p4u" section above before proceeding.
