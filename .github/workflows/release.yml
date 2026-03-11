@@ -11,6 +11,9 @@ on:
 permissions:
   contents: write
 
+env:
+  CLAWHUB_SKILL_DIR: .codebuddy/skills/p4u
+
 jobs:
   release:
     name: Build and Release
@@ -213,3 +216,39 @@ jobs:
             dist/skill-p4u.zip
             dist/checksums.txt
           fail_on_unmatched_files: true
+
+      - name: Publish skill to ClawHub
+        env:
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+          BUILD_VERSION: ${{ steps.version.outputs.build_version }}
+          IS_TAG: ${{ steps.version.outputs.is_tag }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${CLAWHUB_TOKEN:-}" ]]; then
+            echo "CLAWHUB_TOKEN not set — skipping ClawHub publish"
+            exit 0
+          fi
+
+          npm i -g clawhub --silent
+
+          clawhub login --token "${CLAWHUB_TOKEN}" --no-browser --label "ci"
+
+          if [[ "${IS_TAG}" == "true" ]]; then
+            CLAWHUB_VERSION="${BUILD_VERSION#v}"   # strip leading 'v' (e.g. v1.2.3 → 1.2.3)
+            CHANGELOG="Release ${BUILD_VERSION}"
+            CLAWHUB_TAGS="latest"
+          else
+            # Nightly: use 0.0.0-nightly.<short-sha> as a pre-release semver
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            CLAWHUB_VERSION="0.0.0-nightly.${SHORT_SHA}"
+            CHANGELOG="Nightly build from commit ${SHORT_SHA}"
+            CLAWHUB_TAGS="nightly"
+          fi
+
+          clawhub publish "${CLAWHUB_SKILL_DIR}" \
+            --slug      p4u \
+            --name      "p4u" \
+            --version   "${CLAWHUB_VERSION}" \
+            --changelog "${CHANGELOG}" \
+            --tags      "${CLAWHUB_TAGS}" \
+            --no-input
