@@ -96,12 +96,12 @@ jobs:
         if: steps.version.outputs.is_tag == 'false'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
-          name: "Latest"
+          tag_name: nightly
+          name: "Nightly (latest main)"
           prerelease: true
           target_commitish: ${{ github.sha }}
           body: |
-            ## p4u latest
+            ## p4u nightly
 
             Automatically updated on every push to `main`. Use a tagged version for stable releases.
 
@@ -111,24 +111,24 @@ jobs:
             ```bash
             OS=$(uname -s | tr '[:upper:]' '[:lower:]') && ARCH=$(uname -m)
             [[ "$ARCH" == "x86_64" ]] && ARCH=amd64 || ARCH=arm64
-            curl -fsSL "https://github.com/m9rco/p4u-skill/releases/latest/download/p4u-${OS}-${ARCH}" \
+            curl -fsSL "https://github.com/m9rco/p4u-skill/releases/download/nightly/p4u-${OS}-${ARCH}" \
               -o /tmp/p4u && chmod +x /tmp/p4u && sudo mv /tmp/p4u /usr/local/bin/p4u
             ```
 
             ### Install binary — Windows (PowerShell)
             ```powershell
-            Invoke-WebRequest -Uri "https://github.com/m9rco/p4u-skill/releases/latest/download/p4u-windows-amd64.exe" `
+            Invoke-WebRequest -Uri "https://github.com/m9rco/p4u-skill/releases/download/nightly/p4u-windows-amd64.exe" `
               -OutFile "$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\p4u.exe"
             ```
 
             ### Install skill (Claude Code / CodeBuddy Code)
             ```bash
             # project-level — unzips to .claude/skills/p4u/ and .codebuddy/skills/p4u/
-            curl -fsSL https://github.com/m9rco/p4u-skill/releases/latest/download/skill-p4u.zip \
+            curl -fsSL https://github.com/m9rco/p4u-skill/releases/download/nightly/skill-p4u.zip \
               -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d .
 
             # user-level
-            curl -fsSL https://github.com/m9rco/p4u-skill/releases/latest/download/skill-p4u.zip \
+            curl -fsSL https://github.com/m9rco/p4u-skill/releases/download/nightly/skill-p4u.zip \
               -o /tmp/skill-p4u.zip && unzip -o /tmp/skill-p4u.zip -d ~
             ```
           files: |
