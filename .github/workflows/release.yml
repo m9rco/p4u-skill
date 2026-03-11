@@ -44,13 +44,13 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           mkdir -p dist
-          LDFLAGS="-ldflags=-X main.version=${VERSION} -s -w"
+          LDFLAGS="-X main.version=${VERSION} -s -w"
 
-          GOOS=linux   GOARCH=amd64  go build ${LDFLAGS} -o dist/p4u-linux-amd64       .
-          GOOS=linux   GOARCH=arm64  go build ${LDFLAGS} -o dist/p4u-linux-arm64        .
-          GOOS=darwin  GOARCH=amd64  go build ${LDFLAGS} -o dist/p4u-darwin-amd64      .
-          GOOS=darwin  GOARCH=arm64  go build ${LDFLAGS} -o dist/p4u-darwin-arm64      .
-          GOOS=windows GOARCH=amd64  go build ${LDFLAGS} -o dist/p4u-windows-amd64.exe .
+          GOOS=linux   GOARCH=amd64  go build -ldflags "${LDFLAGS}" -o dist/p4u-linux-amd64       .
+          GOOS=linux   GOARCH=arm64  go build -ldflags "${LDFLAGS}" -o dist/p4u-linux-arm64        .
+          GOOS=darwin  GOARCH=amd64  go build -ldflags "${LDFLAGS}" -o dist/p4u-darwin-amd64      .
+          GOOS=darwin  GOARCH=arm64  go build -ldflags "${LDFLAGS}" -o dist/p4u-darwin-arm64      .
+          GOOS=windows GOARCH=amd64  go build -ldflags "${LDFLAGS}" -o dist/p4u-windows-amd64.exe .
 
       - name: Generate checksums
         run: |
