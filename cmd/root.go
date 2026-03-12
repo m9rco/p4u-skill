@@ -46,8 +46,8 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&globalNoColor, "no-color", "n", false, "Disable color output")
-	rootCmd.PersistentFlags().BoolVarP(&globalForceColor, "force-color", "o", false, "Force color output (when piping)")
+	rootCmd.PersistentFlags().BoolVar(&globalNoColor, "no-color", false, "Disable color output")
+	rootCmd.PersistentFlags().BoolVar(&globalForceColor, "force-color", false, "Force color output (when piping)")
 	rootCmd.PersistentFlags().BoolVar(&globalJSON, "json", false, "Output in JSON format")
 	rootCmd.PersistentFlags().BoolVar(&globalNonInteractive, "non-interactive", false, "Disable interactive prompts (for automation)")
 }
