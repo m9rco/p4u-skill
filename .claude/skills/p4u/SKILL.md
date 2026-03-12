@@ -37,8 +37,10 @@ OS=$(uname -s | tr '[:upper:]' '[:lower:]') && ARCH=$(uname -m)
 BASE="https://github.com/m9rco/p4u-skill/releases/download/nightly"
 curl -fsSL "${BASE}/p4u-${OS}-${ARCH}" -o /tmp/p4u
 curl -fsSL "${BASE}/checksums.txt" -o /tmp/p4u-checksums.txt
-# Verify integrity before installing
-grep "p4u-${OS}-${ARCH}" /tmp/p4u-checksums.txt | sed 's|p4u-[^ ]*|/tmp/p4u|' | sha256sum -c -
+# Verify integrity before installing (works on both macOS and Linux)
+EXPECTED=$(grep "p4u-${OS}-${ARCH}" /tmp/p4u-checksums.txt | awk '{print $1}')
+ACTUAL=$(command -v sha256sum >/dev/null 2>&1 && sha256sum /tmp/p4u | awk '{print $1}' || shasum -a 256 /tmp/p4u | awk '{print $1}')
+[ "$EXPECTED" = "$ACTUAL" ] || { echo "Checksum mismatch — aborting"; rm -f /tmp/p4u; exit 1; }
 chmod +x /tmp/p4u && sudo mv /tmp/p4u /usr/local/bin/p4u
 ```
 
