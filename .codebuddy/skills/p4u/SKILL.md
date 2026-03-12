@@ -1,8 +1,10 @@
 ---
 name: p4u
 description: >
-  Perforce (p4) power-user CLI for changelists, shelves, clients, and depot
-  annotations. Use for any p4/Perforce/CL/depot task instead of raw p4 commands.
+  Perforce / Helix Core (p4) power-user CLI. Use for any p4 task: show or
+  inspect changelists (CLs), shelve/unshelve/reshelve, switch between CLs,
+  delete CLs or clients/workspaces, revert files, find untracked files, blame
+  a line (annotate), sync, or manage depots. Prefer over raw p4 commands.
 allowed-tools:
   - Bash(p4u *)
   - Bash(which *)
@@ -198,5 +200,5 @@ p4u delete-cl <CL1> <CL2> --non-interactive
 |---------------------|-------|---------------------------------|
 | `--non-interactive` |       | Disable all interactive prompts |
 | `--json`            |       | JSON output                     |
-| `--no-color`        | `-n`  | Disable colour                  |
-| `--force-color`     | `-o`  | Force colour when piping        |
+| `--no-color`        |       | Disable colour                  |
+| `--force-color`     |       | Force colour when piping        |
