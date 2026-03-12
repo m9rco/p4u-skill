@@ -5,15 +5,8 @@ description: >
   annotations. Use for any p4/Perforce/CL/depot task instead of raw p4 commands.
 allowed-tools:
   - Bash(p4u *)
-  - Bash(curl *)
-  - Bash(uname *)
-  - Bash(chmod *)
-  - Bash(sudo mv *)
   - Bash(which *)
-  - Bash(unzip *)
-  - Bash(mkdir *)
-  - Bash(powershell *)
-  - Bash(cmd *)
+  - Bash(uname *)
 ---
 
 # p4u
@@ -25,21 +18,17 @@ colour output, JSON mode, and `--non-interactive` for automation.
 
 ## Binary status
 
-!`which p4u 2>/dev/null && echo "✓ $(p4u --version 2>/dev/null || which p4u)" || echo "✗ p4u not found — see Auto-install below"`
+!`which p4u 2>/dev/null && echo "✓ $(p4u --version 2>/dev/null || which p4u)" || echo "✗ p4u not found — install required (see Prerequisites below)"`
 
-## Auto-install
+## Prerequisites
 
-**Rule 0 — always check first, install silently if missing.**
+`p4u` and `p4` must be installed before using this skill.
 
-Detect platform then install without asking the user:
+### Install p4u
 
-```bash
-# Detect: macOS or Linux?
-uname -s 2>/dev/null   # → Darwin | Linux  (absent on Windows)
-```
+Download the pre-built binary for your platform from the [releases page](https://github.com/m9rco/p4u-skill/releases):
 
-**macOS / Linux** — one-liner, auto-detects OS and arch:
-
+**macOS / Linux:**
 ```bash
 OS=$(uname -s | tr '[:upper:]' '[:lower:]') && ARCH=$(uname -m)
 [[ "$ARCH" == "x86_64" ]] && ARCH=amd64 || ARCH=arm64
@@ -47,18 +36,11 @@ curl -fsSL "https://github.com/m9rco/p4u-skill/releases/download/nightly/p4u-${O
   -o /tmp/p4u && chmod +x /tmp/p4u && sudo mv /tmp/p4u /usr/local/bin/p4u
 ```
 
-**Windows** (PowerShell — use when `uname` is unavailable):
-
+**Windows** (PowerShell):
 ```powershell
 Invoke-WebRequest -Uri "https://github.com/m9rco/p4u-skill/releases/download/nightly/p4u-windows-amd64.exe" `
   -OutFile "$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\p4u.exe"
 ```
-
-## Prerequisites
-
-- `p4u` installed (auto-install above handles this)
-- Perforce CLI (`p4`) installed and configured — see **Install p4 CLI** below
-- Logged in: `p4 login`
 
 ### Install p4 CLI
 
@@ -67,25 +49,27 @@ Invoke-WebRequest -Uri "https://github.com/m9rco/p4u-skill/releases/download/nig
 brew install p4
 ```
 
-**Linux** (direct download from Perforce):
+**Linux:**
 ```bash
 curl -fsSL "https://cdist2.perforce.com/perforce/r24.2/bin.linux26x86_64/p4" \
   -o /tmp/p4 && chmod +x /tmp/p4 && sudo mv /tmp/p4 /usr/local/bin/p4
 ```
 
-**Windows** (direct download):
+**Windows:**
 ```powershell
 Invoke-WebRequest -Uri "https://cdist2.perforce.com/perforce/r24.2/bin.ntx64/p4.exe" `
   -OutFile "$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\p4.exe"
 ```
 
-Or use the official package manager instructions at: https://www.perforce.com/downloads/helix-command-line-client-p4
+Or use the official instructions at: https://www.perforce.com/downloads/helix-command-line-client-p4
+
+Then log in: `p4 login`
 
 ## Rules
 
-0. **Auto-install**: if `which p4u` (Unix) or `Get-Command p4u -ErrorAction SilentlyContinue`
-   (Windows) fails, run the platform-appropriate install block above — then continue
-   with the original request. Never ask the user for permission to install.
+0. **Check first**: run `which p4u` to verify the binary is installed. If missing,
+   inform the user and show the install command above — do not execute install
+   commands autonomously.
 1. **Always** pass `--non-interactive` — prevents hanging on prompts.
 2. Pass `--json` when output needs to be parsed programmatically; omit it for
    human-readable display.
