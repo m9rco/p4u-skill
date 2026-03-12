@@ -34,8 +34,12 @@ Download the pre-built binary for your platform from the [releases page](https:/
 ```bash
 OS=$(uname -s | tr '[:upper:]' '[:lower:]') && ARCH=$(uname -m)
 [[ "$ARCH" == "x86_64" ]] && ARCH=amd64 || ARCH=arm64
-curl -fsSL "https://github.com/m9rco/p4u-skill/releases/download/nightly/p4u-${OS}-${ARCH}" \
-  -o /tmp/p4u && chmod +x /tmp/p4u && sudo mv /tmp/p4u /usr/local/bin/p4u
+BASE="https://github.com/m9rco/p4u-skill/releases/download/nightly"
+curl -fsSL "${BASE}/p4u-${OS}-${ARCH}" -o /tmp/p4u
+curl -fsSL "${BASE}/checksums.txt" -o /tmp/p4u-checksums.txt
+# Verify integrity before installing
+grep "p4u-${OS}-${ARCH}" /tmp/p4u-checksums.txt | sed 's|p4u-[^ ]*|/tmp/p4u|' | sha256sum -c -
+chmod +x /tmp/p4u && sudo mv /tmp/p4u /usr/local/bin/p4u
 ```
 
 **Windows** (PowerShell):
@@ -73,11 +77,14 @@ Then log in: `p4 login`
    inform the user and show the install command above — do not execute install
    commands autonomously.
 1. **Always** pass `--non-interactive` — prevents hanging on prompts.
-2. Pass `--json` when output needs to be parsed programmatically; omit it for
+2. **Destructive operations** (`delete-client`, `delete-cl`, `revert-all`, any `-f`/`--force`
+   flag) **require explicit user confirmation** before running. Show the command and
+   ask the user to confirm — never execute destructive commands autonomously.
+3. Pass `--json` when output needs to be parsed programmatically; omit it for
    human-readable display.
-3. Changelist numbers are plain integers, e.g. `12345`.
-4. `p4u` auto-reads current user and client from `p4 info`.
-5. **Error handling**: on non-zero exit show the raw output as-is; do not silently
+4. Changelist numbers are plain integers, e.g. `12345`.
+5. `p4u` auto-reads current user and client from `p4 info`.
+6. **Error handling**: on non-zero exit show the raw output as-is; do not silently
    retry with different flags.
 
 ## Workflow Decision Tree
@@ -91,12 +98,12 @@ questions needed for these standard cases:
 | "switch to CL 12345", "load changelist 12345"   | `p4u switch 12345 --non-interactive`             |
 | "who changed line N of //depot/…"               | `p4u annotate //depot/… N --non-interactive`     |
 | "inspect CL 12345", "what's in changelist …"    | `p4u show-cl 12345 --non-interactive`            |
-| "delete this client", "remove my workspace"     | `p4u delete-client -f --non-interactive`         |
+| "delete this client", "remove my workspace"     | confirm first, then `p4u delete-client --non-interactive` |
 | "find untracked files", "what's not in p4"      | `p4u untracked --non-interactive`                |
-| "revert everything", "undo all changes"         | `p4u revert-all --non-interactive`               |
+| "revert everything", "undo all changes"         | confirm first, then `p4u revert-all --non-interactive`    |
 | "reshelve CL 12345"                             | `p4u reshelve 12345 --non-interactive`           |
 | "unshelve CL 12345"                             | `p4u unshelve 12345 --non-interactive`           |
-| "delete CL 12345"                               | `p4u delete-cl 12345 --non-interactive`          |
+| "delete CL 12345"                               | confirm first, then `p4u delete-cl 12345 --non-interactive` |
 
 ---
 
