@@ -20,12 +20,18 @@ type ChangeDetail struct {
 
 // Describe fetches detailed information about a changelist.
 // shelvedOnly=true uses -Ss (shelved info), false uses -s (pending info).
-func (c *Client) Describe(cl string, shelvedOnly bool) (*ChangeDetail, error) {
+// brief=true passes -m1 so only one file per section is returned (faster for large CLs).
+func (c *Client) Describe(cl string, shelvedOnly bool, brief ...bool) (*ChangeDetail, error) {
 	flag := "-s"
 	if shelvedOnly {
 		flag = "-Ss"
 	}
-	out, err := c.exec.Run("describe", flag, cl)
+	args := []string{"describe", flag}
+	if len(brief) > 0 && brief[0] {
+		args = append(args, "-m1")
+	}
+	args = append(args, cl)
+	out, err := c.exec.Run(args...)
 	if err != nil {
 		return nil, fmt.Errorf("describe %s: %w", cl, err)
 	}

@@ -57,16 +57,30 @@ func runShow(cmd *cobra.Command, args []string) error {
 	}
 
 	clientName := showClient
-	if clientName == "" {
-		clientName = info.ClientName
-		if clientName == "" || clientName == info.HostName {
-			return fmt.Errorf("not inside a p4 client directory. Use -c to specify a client")
-		}
-	}
-
 	user := showUser
 	if user == "" {
 		user = info.UserName
+	}
+
+	if clientName == "" {
+		clientName = info.ClientName
+		if clientName == "" || clientName == info.HostName {
+			// Not inside a p4 workspace. If -u was given, offer an interactive
+			// client picker so the user doesn't have to know the client name.
+			if showUser != "" {
+				clients, err := p4Client.ListClients(user)
+				if err != nil || len(clients) == 0 {
+					return fmt.Errorf("no clients found for user %q — use -c to specify a client", user)
+				}
+				chosen, _, pickErr := ui.PickFromList(clients, "show", globalNonInteractive)
+				if pickErr != nil {
+					return fmt.Errorf("client selection cancelled: %w", pickErr)
+				}
+				clientName = chosen
+			} else {
+				return fmt.Errorf("not inside a p4 client directory. Use -c to specify a client")
+			}
+		}
 	}
 
 	// Determine which changelists to fetch.
@@ -153,7 +167,7 @@ func runShow(cmd *cobra.Command, args []string) error {
 			i, num := i, num
 			go func() {
 				defer wg.Done()
-				out, e := formatChangelist(num, brief)
+				out, e := formatChangelist(num, brief, brief)
 				results[i] = result{idx: i, output: out, err: e}
 			}()
 		}
@@ -205,8 +219,8 @@ func printDefaultChangelist(printer *output.Printer, files []string, brief bool)
 	return nil
 }
 
-func formatChangelist(cl string, brief bool) (string, error) {
-	d, err := p4Client.Describe(cl, false)
+func formatChangelist(cl string, brief bool, descBrief bool) (string, error) {
+	d, err := p4Client.Describe(cl, false, descBrief)
 	if err != nil {
 		return "", err
 	}
@@ -232,18 +246,17 @@ func formatChangelist(cl string, brief bool) (string, error) {
 		for _, r := range d.ReviewLinks {
 			sb.WriteString(ui.Yellow.Sprint("    "+r) + "\n")
 		}
-		// Bug fixes.
+		// Bug fixes — one per line.
 		if len(d.BugFixes) > 0 {
-			sb.WriteString(ui.Green.Sprint("    Bugs Fixed: "))
+			sb.WriteString(ui.Green.Sprint("    Bugs Fixed:") + "\n")
 			for _, b := range d.BugFixes {
-				sb.WriteString(b + " ")
+				sb.WriteString(ui.Green.Sprint("        "+b) + "\n")
 			}
-			sb.WriteString("\n")
 		}
 	}
 
 	// Fetch shelved info.
-	shelved, _ := p4Client.Describe(cl, true)
+	shelved, _ := p4Client.Describe(cl, true, descBrief)
 
 	if len(d.PendingFiles) > 0 {
 		sb.WriteString(ui.Blue.Sprint("    Pending Files") + "\n")

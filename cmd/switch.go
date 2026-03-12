@@ -53,6 +53,9 @@ func runSwitch(cmd *cobra.Command, args []string) error {
 	}
 	user := info.UserName
 
+	// Ensure client hostname matches current machine before operations.
+	_ = p4Client.EnsureHostname(clientName)
+
 	// Resolve target changelists.
 	var targetCLs []string
 	if len(args) > 0 {

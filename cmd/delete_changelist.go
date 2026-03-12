@@ -57,6 +57,9 @@ func runDeleteCL(cmd *cobra.Command, args []string) error {
 			clClient = ""
 		}
 
+		// Ensure client hostname matches current machine before operations.
+		_ = p4Client.EnsureHostname(clClient)
+
 		fmt.Fprintf(cmd.OutOrStdout(), "Deleting changelist %s...\n", ui.Cyan.Sprint(cl))
 
 		// Delete shelve.

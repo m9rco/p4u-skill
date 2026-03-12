@@ -10,6 +10,24 @@ import (
 	"strings"
 )
 
+// EnsureHostname checks if the client's Host field matches the current machine.
+// If it differs, updates the client spec so operations aren't rejected by the server.
+// Mirrors the shell p4-fix-hostname helper. Silently no-ops if host field is empty.
+func (c *Client) EnsureHostname(clientName string) error {
+	if clientName == "" {
+		return nil
+	}
+	clientHost, err := c.GetClientHost(clientName)
+	if err != nil || clientHost == "" {
+		return nil // no host restriction or can't read spec — proceed anyway
+	}
+	currentHost, err := os.Hostname()
+	if err != nil || clientHost == currentHost {
+		return nil
+	}
+	return c.UpdateClientHost(clientName, currentHost)
+}
+
 // runWithStdin runs `p4 args...` with the given stdin content.
 func runWithStdin(_ string, args ...string) error {
 	// Last arg is the stdin content, actual p4 args are args[:len-1].
@@ -186,13 +204,16 @@ func (c *Client) Resolve() error {
 
 // FindUntracked returns files in dirs that p4 does not know about.
 // Uses Go's filepath.WalkDir instead of the Unix `find` command so it
-// works on Windows.
+// works on Windows. Files are checked in batches of 50 via p4 fstat.
 func (c *Client) FindUntracked(dirs []string, maxDepth int) ([]string, error) {
 	if len(dirs) == 0 {
 		dirs = []string{"."}
 	}
 
-	var untracked []string
+	const batchSize = 50
+
+	// Collect candidate files first.
+	var candidates []string
 	for _, root := range dirs {
 		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
@@ -200,9 +221,11 @@ func (c *Client) FindUntracked(dirs []string, maxDepth int) ([]string, error) {
 			}
 			if d.IsDir() {
 				// Enforce maxDepth when set.
+				// Matches find -maxdepth semantics: depth 1 = direct children of root.
 				if maxDepth > 0 {
 					rel, relErr := filepath.Rel(root, path)
-					if relErr == nil {
+					if relErr == nil && rel != "." {
+						// Count path components: "a/b" → depth 2
 						depth := len(strings.Split(filepath.ToSlash(rel), "/"))
 						if depth > maxDepth {
 							return filepath.SkipDir
@@ -211,14 +234,47 @@ func (c *Client) FindUntracked(dirs []string, maxDepth int) ([]string, error) {
 				}
 				return nil
 			}
-			out, _ := c.exec.Run("fstat", path)
-			if strings.Contains(out, "no such file") || strings.TrimSpace(out) == "" {
-				untracked = append(untracked, path)
-			}
+			candidates = append(candidates, path)
 			return nil
 		})
 		if err != nil {
 			return nil, fmt.Errorf("walk %s: %w", root, err)
+		}
+	}
+
+	// Batch fstat queries.
+	// p4 fstat writes one block per known file to stdout; unknown files
+	// produce a "no such file(s)" message on stderr and a non-zero exit.
+	// We collect which local paths the server knows about (clientFile /
+	// localPath fields), then mark anything missing as untracked.
+	known := make(map[string]bool)
+	for i := 0; i < len(candidates); i += batchSize {
+		end := i + batchSize
+		if end > len(candidates) {
+			end = len(candidates)
+		}
+		batch := candidates[i:end]
+		args := append([]string{"fstat"}, batch...)
+		out, _ := c.exec.Run(args...) // ignore exit error: happens when some files unknown
+		for _, line := range strings.Split(out, "\n") {
+			line = strings.TrimSpace(line)
+			// Match "... clientFile <path>" or "... localPath <path>"
+			for _, prefix := range []string{"... clientFile ", "... localPath "} {
+				if strings.HasPrefix(line, prefix) {
+					p := strings.TrimPrefix(line, prefix)
+					known[filepath.ToSlash(p)] = true
+					known[filepath.Clean(p)] = true
+				}
+			}
+		}
+	}
+
+	var untracked []string
+	for _, p := range candidates {
+		abs, _ := filepath.Abs(p)
+		if !known[filepath.ToSlash(p)] && !known[filepath.Clean(p)] &&
+			!known[filepath.ToSlash(abs)] && !known[filepath.Clean(abs)] {
+			untracked = append(untracked, p)
 		}
 	}
 	return untracked, nil

@@ -84,6 +84,9 @@ func runDeleteClient(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// Ensure client hostname matches current machine before operations.
+	_ = p4Client.EnsureHostname(clientName)
+
 	// Get and delete all pending changelists.
 	numbers, _ := p4Client.ListChanges(p4.ListChangesOpts{
 		Status: p4.StatusPending, User: user, Client: clientName,
@@ -135,6 +138,15 @@ func runDeleteClient(cmd *cobra.Command, args []string) error {
 		fmt.Fprintln(cmd.OutOrStdout(), "Done!")
 		fmt.Fprintf(cmd.OutOrStdout(), "%s (%s is now gone)\n",
 			ui.Cyan.Sprint("There is no spoon."), clientPath)
+		// Suggest moving to the parent directory since the workspace is gone.
+		parent := ""
+		if p := strings.TrimRight(clientPath, "/\\"); p != "" {
+			parent = p[:strings.LastIndexAny(p, "/\\")+1]
+		}
+		if parent == "" {
+			parent = ".."
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "You might want to: %s\n", ui.Yellow.Sprintf("cd %s", parent))
 	}
 	return nil
 }
