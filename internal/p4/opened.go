@@ -91,8 +91,6 @@ func (c *Client) FixHostname(clientName, newHost string) error {
 			updated.WriteString(line + "\n")
 		}
 	}
-	_, err = c.exec.Run("client", "-i")
-	_ = updated
 	// Use direct exec for stdin-based command.
 	return runWithStdin(clientName, "client", "-i", updated.String())
 }
